@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "CampaignHQ",
+    "slug": "campaignhq-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#FFF8EC"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.campaignhq.mobile"
+    },
+    "android": {
+      "package": "com.campaignhq.mobile"
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}
