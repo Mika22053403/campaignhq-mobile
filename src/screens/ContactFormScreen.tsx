@@ -39,8 +39,9 @@ const emptyValues: FormValues = {
 };
 
 export default function ContactFormScreen({ route, navigation }: Props) {
-  const { mode, id } = route.params;
-  const isEdit = mode === "edit";
+  const params = route.params;
+  const isEdit = params.mode === "edit";
+  const id = params.mode === "edit" ? params.id : undefined;
 
   const contacts = useContactStore((state) => state.contacts);
   const existing = useContactStore((state) =>
