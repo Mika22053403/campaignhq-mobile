@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors } from "@/theme/colors";
 import { useContactStore } from "@/store/contact-store";
@@ -22,6 +23,7 @@ import type { RootStackParamList } from "@/navigation/RootNavigator";
 type Props = NativeStackScreenProps<RootStackParamList, "Contacts">;
 
 export default function ContactsScreen({ navigation }: Props) {
+  const insets = useSafeAreaInsets();
   const {
     contacts,
     isLoading,
@@ -272,7 +274,7 @@ export default function ContactsScreen({ navigation }: Props) {
             }
           />
 
-          <View style={styles.paginationBar}>
+          <View style={[styles.paginationBar, { paddingBottom: Math.max(12, insets.bottom) }]}>
             <Pressable
               style={[styles.pageButton, page <= 1 && styles.pageButtonDisabled]}
               onPress={() => setPage(page - 1)}
@@ -295,7 +297,7 @@ export default function ContactsScreen({ navigation }: Props) {
       )}
 
       {selectionMode && selectedIds.length > 0 && (
-        <View style={styles.bulkBar}>
+        <View style={[styles.bulkBar, { paddingBottom: Math.max(12, insets.bottom) }]}>
           <Pressable style={styles.bulkButton} onPress={() => exportContacts(selectedIds)}>
             <Text style={styles.bulkButtonText}>Export</Text>
           </Pressable>
