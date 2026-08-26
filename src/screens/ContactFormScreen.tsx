@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useHeaderHeight } from "@react-navigation/elements";
 
 import { colors } from "@/theme/colors";
 import { useContactStore } from "@/store/contact-store";
@@ -42,6 +43,7 @@ export default function ContactFormScreen({ route, navigation }: Props) {
   const params = route.params;
   const isEdit = params.mode === "edit";
   const id = params.mode === "edit" ? params.id : undefined;
+  const headerHeight = useHeaderHeight();
 
   const contacts = useContactStore((state) => state.contacts);
   const existing = useContactStore((state) =>
@@ -117,9 +119,14 @@ export default function ContactFormScreen({ route, navigation }: Props) {
   return (
     <KeyboardAvoidingView
       style={styles.flex}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={headerHeight}
     >
-      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <Field
           label="First name"
           value={values.firstName}
@@ -274,7 +281,7 @@ function Field({ label, value, onChangeText, error, ...rest }: FieldProps) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.cream },
-  content: { padding: 20, gap: 16, paddingBottom: 48 },
+  content: { padding: 20, gap: 16, paddingBottom: 140 },
   field: { gap: 6 },
   label: { fontSize: 13, fontWeight: "600", color: colors.foreground },
   input: {

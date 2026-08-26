@@ -14,7 +14,8 @@
       "bundleIdentifier": "com.campaignhq.mobile"
     },
     "android": {
-      "package": "com.campaignhq.mobile"
+      "package": "com.campaignhq.mobile",
+      "softwareKeyboardLayoutMode": "resize"
     },
     "web": {
       "bundler": "metro"
