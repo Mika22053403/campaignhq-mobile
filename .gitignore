@@ -9,3 +9,6 @@ web-build/
 *.mobileprovision
 *.orig.*
 .DS_Store
+
+android/
+ios/
