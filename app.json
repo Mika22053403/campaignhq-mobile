@@ -6,7 +6,9 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "icon": "./assets/icons/icon.png",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.campaignhq.mobile"
@@ -32,6 +34,12 @@
           "backgroundColor": "#FFF8EC"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "8705d1ca-de37-45c2-abc6-c3d574f01a14"
+      }
+    },
+    "owner": "arosreesatapathys-team"
   }
 }

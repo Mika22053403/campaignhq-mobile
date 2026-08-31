@@ -12,9 +12,11 @@ import {
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import * as Contacts from "expo-contacts";
 
 import { colors } from "@/theme/colors";
 import { useContactStore } from "@/store/contact-store";
+import { useToastStore } from "@/store/toast-store";
 import { contactSchema } from "@/schemas/contact.schema";
 import { getAllTags } from "@/utils/contact-filters";
 import type { RootStackParamList } from "@/navigation/RootNavigator";
@@ -58,6 +60,7 @@ export default function ContactFormScreen({ route, navigation }: Props) {
   const [tagInput, setTagInput] = useState("");
   const [errors, setErrors] = useState<Partial<Record<keyof FormValues, string>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
   const existingTags = useMemo(
     () => getAllTags(contacts).filter((tag) => !tags.includes(tag)),
@@ -102,6 +105,52 @@ export default function ContactFormScreen({ route, navigation }: Props) {
     setValues((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleImportFromContacts = async () => {
+    try {
+      setIsImporting(true);
+
+      const { status } = await Contacts.requestPermissionsAsync();
+      if (status !== "granted") {
+        useToastStore
+          .getState()
+          .show("Contacts permission is needed to import a contact.", "error");
+        return;
+      }
+
+      // presentContactPickerAsync shows the native contacts picker. On Android,
+      // reading the picked contact's details still needs the permission we
+      // requested above, even though opening the picker itself doesn't.
+      const picked = await Contacts.presentContactPickerAsync();
+
+      if (!picked) return; // user backed out of the picker
+
+      const firstName = picked.firstName?.trim() ?? "";
+      const lastName = picked.lastName?.trim() ?? "";
+      const email = picked.emails?.[0]?.email?.trim() ?? "";
+      const phone = (picked.phoneNumbers?.[0]?.number ?? "").replace(/[^\d+]/g, "");
+      const company = picked.company?.trim() ?? "";
+
+      if (!firstName && !lastName && !email && !phone) {
+        useToastStore.getState().show("That contact has no usable details.", "error");
+        return;
+      }
+
+      setValues((prev) => ({
+        ...prev,
+        firstName: firstName || prev.firstName,
+        lastName: lastName || prev.lastName,
+        email: email || prev.email,
+        phone: phone || prev.phone,
+        company: company || prev.company,
+      }));
+      useToastStore.getState().show("Contact details imported.", "success");
+    } catch {
+      useToastStore.getState().show("Unable to open your contacts. Please try again.", "error");
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   const handleSubmit = async () => {
     const result = contactSchema.safeParse(values);
     if (!result.success) {
@@ -144,6 +193,20 @@ export default function ContactFormScreen({ route, navigation }: Props) {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        {!isEdit && (
+          <Pressable
+            style={[styles.importButton, isImporting && styles.importButtonDisabled]}
+            onPress={handleImportFromContacts}
+            disabled={isImporting}
+          >
+            {isImporting ? (
+              <ActivityIndicator color={colors.primary} />
+            ) : (
+              <Text style={styles.importButtonText}>📇 Import from phone contacts</Text>
+            )}
+          </Pressable>
+        )}
+
         <Field
           label="First name"
           value={values.firstName}
@@ -315,6 +378,18 @@ const styles = StyleSheet.create({
     color: colors.foreground,
   },
   errorText: { fontSize: 12, color: colors.destructive },
+  importButton: {
+    height: 48,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderStyle: "dashed",
+    borderColor: colors.primary,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.white,
+  },
+  importButtonDisabled: { opacity: 0.5 },
+  importButtonText: { color: colors.primary, fontSize: 14, fontWeight: "700" },
   statusToggle: { flexDirection: "row", gap: 10 },
   statusOption: {
     flex: 1,
