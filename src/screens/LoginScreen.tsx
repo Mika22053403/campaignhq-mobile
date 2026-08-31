@@ -61,7 +61,6 @@ export default function LoginScreen({ navigation }: Props) {
     <KeyboardAvoidingView
       style={styles.flex}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 24}
     >
       <ScrollView
         contentContainerStyle={styles.scrollContent}

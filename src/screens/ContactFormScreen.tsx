@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -11,7 +11,7 @@ import {
   View,
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useHeaderHeight } from "@react-navigation/elements";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors } from "@/theme/colors";
 import { useContactStore } from "@/store/contact-store";
@@ -43,7 +43,8 @@ export default function ContactFormScreen({ route, navigation }: Props) {
   const params = route.params;
   const isEdit = params.mode === "edit";
   const id = params.mode === "edit" ? params.id : undefined;
-  const headerHeight = useHeaderHeight();
+  const insets = useSafeAreaInsets();
+  const scrollRef = useRef<ScrollView>(null);
 
   const contacts = useContactStore((state) => state.contacts);
   const existing = useContactStore((state) =>
@@ -63,6 +64,17 @@ export default function ContactFormScreen({ route, navigation }: Props) {
     [contacts, tags]
   );
 
+  // Directly controlling scroll position is far more reliable than relying on
+  // KeyboardAvoidingView's height math, which has proven inconsistent across
+  // Android devices/keyboards. We scroll to the end whenever a field near the
+  // bottom of the form gains focus, and again whenever the tag list changes
+  // height, so the submit button can never end up hidden behind the keyboard.
+  const scrollToEnd = () => {
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    });
+  };
+
   const addTag = (raw: string) => {
     const tag = raw.trim();
     if (!tag || tags.includes(tag)) {
@@ -71,10 +83,12 @@ export default function ContactFormScreen({ route, navigation }: Props) {
     }
     setTags((prev) => [...prev, tag]);
     setTagInput("");
+    scrollToEnd();
   };
 
   const removeTag = (tag: string) => {
     setTags((prev) => prev.filter((t) => t !== tag));
+    scrollToEnd();
   };
 
   useEffect(() => {
@@ -120,10 +134,13 @@ export default function ContactFormScreen({ route, navigation }: Props) {
     <KeyboardAvoidingView
       style={styles.flex}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={headerHeight}
     >
       <ScrollView
-        contentContainerStyle={styles.content}
+        ref={scrollRef}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: Math.max(180, insets.bottom + 160) },
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -161,6 +178,7 @@ export default function ContactFormScreen({ route, navigation }: Props) {
           label="Company"
           value={values.company}
           onChangeText={(v) => setField("company", v)}
+          onFocus={scrollToEnd}
           error={errors.company}
           autoComplete="organization"
         />
@@ -209,6 +227,7 @@ export default function ContactFormScreen({ route, navigation }: Props) {
               style={[styles.input, styles.tagInput]}
               value={tagInput}
               onChangeText={setTagInput}
+              onFocus={scrollToEnd}
               placeholder="Add a tag..."
               placeholderTextColor={colors.mutedForeground}
               autoCapitalize="none"
@@ -257,6 +276,7 @@ interface FieldProps {
   label: string;
   value: string;
   onChangeText: (value: string) => void;
+  onFocus?: () => void;
   error?: string;
   keyboardType?: "default" | "email-address" | "phone-pad";
   autoCapitalize?: "none" | "words" | "sentences";
@@ -281,7 +301,7 @@ function Field({ label, value, onChangeText, error, ...rest }: FieldProps) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1, backgroundColor: colors.cream },
-  content: { padding: 20, gap: 16, paddingBottom: 140 },
+  content: { padding: 20, gap: 16 },
   field: { gap: 6 },
   label: { fontSize: 13, fontWeight: "600", color: colors.foreground },
   input: {

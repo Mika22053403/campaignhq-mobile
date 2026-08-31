@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { CampaignHQLogo } from "@/components/CampaignHQLogo";
 import { colors } from "@/theme/colors";
@@ -35,12 +36,20 @@ const initialValues: FormValues = {
 
 export default function SignupScreen({ navigation }: Props) {
   const login = useAuthStore((state) => state.login);
+  const insets = useSafeAreaInsets();
+  const scrollRef = useRef<ScrollView>(null);
 
   const [values, setValues] = useState<FormValues>(initialValues);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof FormValues, string>>>({});
   const [formError, setFormError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const scrollToEnd = () => {
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollToEnd({ animated: true });
+    });
+  };
 
   const validation = useMemo(() => signupSchema.safeParse(values), [values]);
   const isValid = validation.success;
@@ -79,10 +88,13 @@ export default function SignupScreen({ navigation }: Props) {
     <KeyboardAvoidingView
       style={styles.flex}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 24}
     >
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        ref={scrollRef}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: Math.max(40, insets.bottom + 24) },
+        ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
@@ -140,6 +152,7 @@ export default function SignupScreen({ navigation }: Props) {
               style={styles.input}
               value={values.companyName}
               onChangeText={(v) => setField("companyName", v)}
+              onFocus={scrollToEnd}
               autoComplete="organization"
               placeholder="Acme Inc."
               placeholderTextColor={colors.mutedForeground}
@@ -172,7 +185,7 @@ export default function SignupScreen({ navigation }: Props) {
           sell or share your contact lists.
         </Text>
 
-        <View style={styles.footer}>
+        <View style={styles.loginLink}>
           <Text style={styles.footerText}>Already have an account? </Text>
           <Pressable onPress={() => navigation.navigate("Login")}>
             <Text style={styles.footerLink}>Log in</Text>
@@ -190,7 +203,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingHorizontal: 24,
     paddingVertical: 40,
-    paddingBottom: 120,
   },
   header: { alignItems: "center", marginBottom: 32 },
   title: {
@@ -229,6 +241,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   submitButton: {
+    marginTop: 4,
     height: 48,
     borderRadius: 10,
     backgroundColor: colors.primary,
@@ -244,7 +257,7 @@ const styles = StyleSheet.create({
     color: colors.mutedForeground,
     textAlign: "center",
   },
-  footer: {
+  loginLink: {
     marginTop: 16,
     flexDirection: "row",
     justifyContent: "center",
